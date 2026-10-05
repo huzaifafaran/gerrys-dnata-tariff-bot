@@ -4,8 +4,9 @@ const express = require("express");
 const path = require("path");
 
 const PHONE_NUMBER = process.env.WHATSAPP_PHONE || "923282156448";
-const WEBHOOK_URL = process.env.WEBHOOK_URL || "http://127.0.0.1:8000/webhooks/whatsapp";
-const PORT = process.env.PORT || 3000;
+const APP_PORT = process.env.APP_PORT || process.env.PORT || "8000";
+const WEBHOOK_URL = process.env.WEBHOOK_URL || `http://127.0.0.1:${APP_PORT}/webhooks/whatsapp`;
+const PORT = process.env.BRIDGE_PORT || 3000;
 
 const app = express();
 app.use(express.json());

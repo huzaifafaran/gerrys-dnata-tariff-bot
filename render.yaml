@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: gerrys-dnata-tariff-bot
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health/live
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_TIMEZONE
+        value: Asia/Karachi
+      - key: DATABASE_URL
+        value: sqlite:///./local_dev.db
+      - key: TARIFF_PROFILE
+        value: DEMO_LEGACY
+      - key: WHATSAPP_PROVIDER
+        value: waha
+      - key: WAHA_BASE_URL
+        value: http://127.0.0.1:3000
+      - key: WAHA_SESSION
+        value: default
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: WHATSAPP_PHONE
+        value: "923282156448"

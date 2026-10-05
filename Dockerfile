@@ -6,20 +6,31 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies if any
+# Install system dependencies, curl, and Node.js 20.x
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gnupg \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Node.js bridge dependencies
+COPY bridge/package*.json ./bridge/
+RUN cd bridge && npm install --omit=dev
+
 # Copy application source code
 COPY . .
 
-# Default port
-EXPOSE 8000
+# Ensure start script has executable permissions
+RUN chmod +x ./start.sh
 
-# Default command (API service)
-CMD ["uvicorn", "app.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Render dynamically sets $PORT (typically 10000)
+EXPOSE 8000 10000
+
+# Launch all 3 services via start.sh
+CMD ["./start.sh"]
