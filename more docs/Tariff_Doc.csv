@@ -1,0 +1,4 @@
+﻿ID,Tariff_ID,Effective_Date,Expiry_Date,Category,Charges_DO_Fee,Charges_D_Console,Charges_Doc
+23,12,7/6/2026,12/31/2027,AFU,9828,9828,1226
+24,12,7/6/2026,12/31/2027,PHARMA,9828,9828,1226
+25,12,7/6/2026,12/31/2027,ICG,9828,9828,1226

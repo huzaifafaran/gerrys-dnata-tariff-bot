@@ -1,0 +1,9 @@
+{
+  "arrival_date": "2026-10-01",
+  "payment_date": "2026-10-01",
+  "category": "AFU",
+  "cargo_class": "GEN",
+  "weight_kg": "1000",
+  "station": "KHI",
+  "is_oversize": true
+}

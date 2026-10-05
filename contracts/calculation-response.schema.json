@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CalculationResponse",
+  "type": "object",
+  "required": ["status", "calculation_id", "policy_profile", "tariff_version", "inputs", "breakdown", "subtotal_pkr", "tax_pkr", "grand_total_pkr", "issues", "notice"],
+  "properties": {
+    "status": {"enum": ["calculated", "needs_confirmation", "unsupported"]},
+    "calculation_id": {"type": "string"},
+    "policy_profile": {"type": "string"},
+    "tariff_version": {"type": ["string", "null"]},
+    "inputs": {"type": "object"},
+    "breakdown": {"type": "array", "items": {"type": "object", "required": ["code", "label", "amount_pkr"], "properties": {"code": {"type": "string"}, "label": {"type": "string"}, "amount_pkr": {"type": ["string", "null"]}, "rate_reference": {"type": ["string", "null"]}}}},
+    "dwell_days": {"type": ["integer", "null"]},
+    "subtotal_pkr": {"type": ["string", "null"]},
+    "tax_rate_percent": {"type": ["string", "null"]},
+    "tax_pkr": {"type": ["string", "null"]},
+    "grand_total_pkr": {"type": ["string", "null"]},
+    "issues": {"type": "array", "items": {"type": "string"}},
+    "notice": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "calculated"}}}, "then": {"properties": {"subtotal_pkr": {"type": "string"}, "tax_pkr": {"type": "string"}, "grand_total_pkr": {"type": "string"}}}, "else": {"properties": {"grand_total_pkr": {"type": "null"}}}}
+  ]
+}

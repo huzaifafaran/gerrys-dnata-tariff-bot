@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tariff_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tariff
+      POSTGRES_PASSWORD: local_dev_only
+      POSTGRES_DB: tariff
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tariff -d tariff"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: tariff_api
+    restart: unless-stopped
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.api.app:app --host 0.0.0.0 --port 8000"
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+psycopg://tariff:local_dev_only@db:5432/tariff
+      - API_KEY=${API_KEY:-}
+      - TARIFF_PROFILE=${TARIFF_PROFILE:-DEMO_LEGACY}
+      - ENABLE_DEV_CHAT=true
+      - WHATSAPP_PROVIDER=${WHATSAPP_PROVIDER:-mock}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-}
+      - WAHA_BASE_URL=${WAHA_BASE_URL:-http://waha:3000}
+      - WAHA_SESSION=${WAHA_SESSION:-default}
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: .
+    container_name: tariff_worker
+    restart: unless-stopped
+    command: python -m app.worker.outbox_worker
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+psycopg://tariff:local_dev_only@db:5432/tariff
+      - WHATSAPP_PROVIDER=${WHATSAPP_PROVIDER:-mock}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
+      - WHATSAPP_API_VERSION=${WHATSAPP_API_VERSION:-v21.0}
+      - WAHA_BASE_URL=${WAHA_BASE_URL:-http://waha:3000}
+      - WAHA_SESSION=${WAHA_SESSION:-default}
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  waha:
+    image: devlikeapro/waha
+    container_name: tariff_waha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - WHATSAPP_HOOK_URL=http://api:8000/webhooks/whatsapp
+      - WAHA_ZIPPER=false
+    profiles:
+      - waha
+
+volumes:
+  postgres_data:

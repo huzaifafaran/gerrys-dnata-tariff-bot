@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerry’s / dnata — WhatsApp Tariff Chatbot Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wa-bg-dark: #0c1317;
+            --wa-panel-dark: #111b21;
+            --wa-header-dark: #202c33;
+            --wa-bubble-bot: #202c33;
+            --wa-bubble-user: #005c4b;
+            --wa-emerald: #00a884;
+            --wa-emerald-hover: #02906f;
+            --wa-text-primary: #e9edef;
+            --wa-text-secondary: #8696a0;
+            --wa-border: #222e35;
+            --wa-blue-ticks: #53bdeb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--wa-bg-dark);
+            color: var(--wa-text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+
+        /* App Window full height */
+        .app-window {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            background: var(--wa-panel-dark);
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .app-window {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none !important;
+            }
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background: #111b21;
+            border-right: 1px solid var(--wa-border);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            background: var(--wa-header-dark);
+            border-bottom: 1px solid var(--wa-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .brand-badge {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00a884, #005c4b);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 168, 132, 0.3);
+        }
+
+        .brand-text h1 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--wa-text-primary);
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--wa-emerald);
+            font-weight: 600;
+        }
+
+        .sidebar-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .panel-card {
+            background: #182229;
+            border: 1px solid var(--wa-border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .panel-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--wa-text-secondary);
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .inspector-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #202c33;
+        }
+        .inspector-row:last-child {
+            border-bottom: none;
+        }
+        .inspector-label {
+            color: var(--wa-text-secondary);
+        }
+        .inspector-val {
+            font-weight: 600;
+            color: var(--wa-text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .preset-btn {
+            width: 100%;
+            background: #202c33;
+            border: 1px solid #2a3942;
+            color: var(--wa-text-primary);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .preset-btn:hover {
+            background: #2a3942;
+            border-color: var(--wa-emerald);
+            transform: translateY(-1px);
+        }
+        .preset-btn span.badge {
+            font-size: 0.7rem;
+            color: var(--wa-emerald);
+            font-weight: 600;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(0, 168, 132, 0.15);
+            color: var(--wa-emerald);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--wa-emerald);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        /* Chat Section */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            height: 100dvh;
+            min-height: 0;
+            background-color: #0b141a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-wallpaper {
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(#00a884 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            background: var(--wa-header-dark);
+            border-bottom: 1px solid var(--wa-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .bot-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #2a3942;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--wa-emerald);
+            font-size: 1.3rem;
+            position: relative;
+            border: 2px solid var(--wa-border);
+        }
+        .avatar-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 13px;
+            height: 13px;
+            background: var(--wa-emerald);
+            border: 2px solid var(--wa-header-dark);
+            border-radius: 50%;
+        }
+
+        .bot-info h2 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .verified-icon {
+            color: var(--wa-emerald);
+            font-size: 0.9rem;
+        }
+        .bot-status {
+            font-size: 0.75rem;
+            color: var(--wa-emerald);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            background: transparent;
+            border: 1px solid #2a3942;
+            color: var(--wa-text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover {
+            color: var(--wa-text-primary);
+            background: #2a3942;
+            border-color: var(--wa-emerald);
+        }
+
+        /* Message Stream with visible smooth scrollbar */
+        .chat-body {
+            flex: 1 1 0%;
+            min-height: 0;
+            padding: 24px;
+            overflow-y: scroll !important;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            z-index: 1;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .chat-body::-webkit-scrollbar, .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-body::-webkit-scrollbar-track, .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .chat-body::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .chat-body::-webkit-scrollbar-thumb:hover, .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--wa-emerald);
+        }
+
+        .msg-bubble {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            position: relative;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-bot {
+            background: var(--wa-bubble-bot);
+            align-self: flex-start;
+            border-top-left-radius: 0;
+            border-left: 3px solid var(--wa-emerald);
+        }
+
+        .msg-user {
+            background: var(--wa-bubble-user);
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+
+        .msg-meta {
+            font-size: 0.68rem;
+            color: var(--wa-text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .ticks {
+            color: var(--wa-blue-ticks);
+            font-weight: bold;
+        }
+
+        /* Floating Scroll to Bottom Button */
+        .scroll-down-btn {
+            position: absolute;
+            bottom: 120px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #202c33;
+            color: #8696a0;
+            border: 1px solid var(--wa-border);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+        }
+        .scroll-down-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .scroll-down-btn:hover {
+            background: #2a3942;
+            color: var(--wa-emerald);
+            transform: scale(1.08);
+        }
+
+        /* Interactive Quick Reply Chips */
+        .quick-chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(17, 27, 33, 0.95);
+            border-top: 1px solid var(--wa-border);
+            z-index: 2;
+            flex-shrink: 0;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .chip-btn {
+            background: #202c33;
+            border: 1px solid #2a3942;
+            color: #d1d7db;
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chip-btn:hover {
+            background: var(--wa-emerald);
+            color: #111b21;
+            font-weight: 600;
+            border-color: var(--wa-emerald);
+            transform: scale(1.03);
+        }
+        .chip-btn.confirm-chip {
+            background: rgba(0, 168, 132, 0.25);
+            border-color: var(--wa-emerald);
+            color: var(--wa-emerald);
+            font-weight: 600;
+        }
+        .chip-btn.confirm-chip:hover {
+            background: var(--wa-emerald);
+            color: #111b21;
+        }
+
+        /* Chat Input Bar */
+        .chat-input-bar {
+            padding: 12px 18px;
+            background: var(--wa-header-dark);
+            border-top: 1px solid var(--wa-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            background: #2a3942;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 4px 14px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--wa-emerald);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--wa-text-primary);
+            font-size: 0.95rem;
+            padding: 8px 0;
+            outline: none;
+        }
+
+        .send-btn {
+            background: var(--wa-emerald);
+            color: #111b21;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .send-btn:hover {
+            background: var(--wa-emerald-hover);
+            transform: scale(1.05);
+        }
+
+        /* Typing indicator */
+        .typing-bubble {
+            background: var(--wa-bubble-bot);
+            padding: 10px 16px;
+            border-radius: 8px;
+            align-self: flex-start;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--wa-text-secondary);
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--wa-emerald);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-window">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-badge">G/d</div>
+                <div class="brand-text">
+                    <h1>Gerry’s / dnata</h1>
+                    <p>Tariff Chatbot POC</p>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- System Status -->
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <span>Environment</span>
+                        <div class="status-pill"><div class="pulse-dot"></div> Live Engine</div>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Profile</span>
+                        <span class="inspector-val">DEMO_LEGACY</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Interface</span>
+                        <span class="inspector-val">WhatsApp Web UI</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Zernio</span>
+                        <span class="inspector-val" style="color: var(--wa-emerald);">Supported</span>
+                    </div>
+                </div>
+
+                <!-- 1-Click Test Presets -->
+                <div class="panel-card">
+                    <div class="panel-title">⚡ 1-Click Test Scenarios</div>
+                    
+                    <button class="preset-btn" onclick="runPreset('oversize_yes')">
+                        <strong>1. AFU 1,000 kg (Oversize YES)</strong>
+                        <span class="badge">Expected: PKR 131,431 (Surcharge +41,234)</span>
+                    </button>
+
+                    <button class="preset-btn" onclick="runPreset('oversize_no')">
+                        <strong>2. AFU 1,000 kg (Oversize NO)</strong>
+                        <span class="badge">Expected: PKR 84,012 (No Surcharge)</span>
+                    </button>
+
+                    <button class="preset-btn" onclick="runPreset('pharma')">
+                        <strong>3. PHARMA GEN (PIL) 50 kg</strong>
+                        <span class="badge">Expected: PKR 17,511 (5-day free storage)</span>
+                    </button>
+
+                    <button class="preset-btn" onclick="runPreset('icg_blocked')">
+                        <strong>4. ICG Unconfirmed Path</strong>
+                        <span class="badge">Expected: Blocked Quote (Hourly grace notice)</span>
+                    </button>
+                </div>
+
+                <!-- Real-Time Shipment Inspector -->
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <span>Shipment Inspector</span>
+                        <button class="icon-btn" onclick="resetSession()" style="padding: 2px 8px; font-size: 0.7rem;">Reset</button>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Arrival Date</span>
+                        <span class="inspector-val" id="insp-arrival">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Payment Date</span>
+                        <span class="inspector-val" id="insp-payment">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Category</span>
+                        <span class="inspector-val" id="insp-category">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Cargo Class</span>
+                        <span class="inspector-val" id="insp-class">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Weight</span>
+                        <span class="inspector-val" id="insp-weight">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Station</span>
+                        <span class="inspector-val" id="insp-station">—</span>
+                    </div>
+                    <div class="inspector-row">
+                        <span class="inspector-label">Oversize</span>
+                        <span class="inspector-val" id="insp-oversize">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-container">
+            <div class="chat-wallpaper"></div>
+
+            <!-- Chat Topbar -->
+            <div class="chat-header">
+                <div class="bot-profile">
+                    <div class="avatar">
+                        ✈️
+                        <div class="avatar-badge"></div>
+                    </div>
+                    <div class="bot-info">
+                        <h2>Gerry’s / dnata Tariff Bot <span class="verified-icon">✓</span></h2>
+                        <span class="bot-status">online • WhatsApp Business Official</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="resetSession()">🔄 Restart</button>
+                    <button class="icon-btn" onclick="sendQuick('help')">❓ Help</button>
+                </div>
+            </div>
+
+            <!-- Message Stream with Scrollbar -->
+            <div class="chat-body" id="chatStream" onscroll="handleScroll()">
+                <div class="msg-bubble msg-bot">
+👋 <b>Welcome to Gerry’s/dnata Tariff Calculator</b>
+
+I will help you calculate import cargo tariffs and station taxes for Karachi, Lahore, Islamabad, and Multan.
+
+📅 Please enter the <b>Cargo Arrival Date</b> (e.g. <code>2026-10-01</code> or <code>01-Oct-2026</code>):
+                    <div class="msg-meta">
+                        <span class="time">Just now</span>
+                    </div>
+                </div>
+
+                <div class="typing-bubble" id="typingIndicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <span>Assistant is calculating...</span>
+                </div>
+            </div>
+
+            <!-- Floating Scroll-To-Bottom Button -->
+            <button class="scroll-down-btn" id="scrollDownBtn" onclick="scrollToBottom()" title="Scroll to bottom">
+                ↓
+            </button>
+
+            <!-- Dynamic Quick Reply Chips -->
+            <div class="quick-chips-container" id="quickChips">
+                <button class="chip-btn" onclick="sendQuick('2026-10-01')">📅 2026-10-01</button>
+                <button class="chip-btn" onclick="sendQuick('restart')">🔄 Restart</button>
+                <button class="chip-btn" onclick="sendQuick('help')">❓ Help</button>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="chat-input-bar">
+                <div class="input-wrapper">
+                    <input type="text" id="userInput" placeholder="Type your response or click a button above..." onkeydown="if(event.key==='Enter') sendMessage()" autofocus />
+                </div>
+                <button class="send-btn" onclick="sendMessage()" title="Send Message">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = "web-sim-" + Math.floor(Math.random() * 1000000);
+
+        function getTimeStr() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function scrollToBottom() {
+            const stream = document.getElementById("chatStream");
+            stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
+        }
+
+        function handleScroll() {
+            const stream = document.getElementById("chatStream");
+            const btn = document.getElementById("scrollDownBtn");
+            const distanceToBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight;
+            if (distanceToBottom > 80) {
+                btn.classList.add("visible");
+            } else {
+                btn.classList.remove("visible");
+            }
+        }
+
+        function appendMessage(sender, text) {
+            const stream = document.getElementById("chatStream");
+            const typing = document.getElementById("typingIndicator");
+
+            const bubble = document.createElement("div");
+            bubble.className = "msg-bubble " + (sender === "user" ? "msg-user" : "msg-bot");
+            
+            // Format markdown bold & code
+            let formatted = text
+                .replace(/\*(.*?)\*/g, '<b>$1</b>')
+                .replace(/`(.*?)`/g, '<code>$1</code>');
+
+            bubble.innerHTML = formatted + `
+                <div class="msg-meta">
+                    <span class="time">${getTimeStr()}</span>
+                    ${sender === "user" ? '<span class="ticks">✓✓</span>' : ''}
+                </div>
+            `;
+
+            stream.insertBefore(bubble, typing);
+            setTimeout(scrollToBottom, 50);
+        }
+
+        async function sendMessage(overrideText) {
+            const input = document.getElementById("userInput");
+            const text = (overrideText || input.value).trim();
+            if (!text) return;
+            if (!overrideText) input.value = "";
+
+            appendMessage("user", text);
+
+            // Show typing indicator
+            const typing = document.getElementById("typingIndicator");
+            typing.style.display = "flex";
+            scrollToBottom();
+
+            try {
+                const res = await fetch("/dev/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId, message: text })
+                });
+
+                typing.style.display = "none";
+
+                if (!res.ok) {
+                    appendMessage("bot", "❌ Server error: " + res.statusText);
+                    return;
+                }
+
+                const data = await res.json();
+                appendMessage("bot", data.reply);
+                updateInspector(data.collected_data || {});
+                updateQuickChips(data.current_state, data.collected_data || {});
+                setTimeout(scrollToBottom, 50);
+            } catch (err) {
+                typing.style.display = "none";
+                appendMessage("bot", "❌ Network error: Could not reach calculator service.");
+            }
+        }
+
+        function sendQuick(txt) {
+            sendMessage(txt);
+        }
+
+        function updateInspector(data) {
+            document.getElementById("insp-arrival").innerText = data.arrival_date || "—";
+            document.getElementById("insp-payment").innerText = data.payment_date || "—";
+            document.getElementById("insp-category").innerText = data.category || "—";
+            document.getElementById("insp-class").innerText = data.cargo_class || "—";
+            document.getElementById("insp-weight").innerText = data.weight_kg ? (data.weight_kg + " kg") : "—";
+            document.getElementById("insp-station").innerText = data.station || "—";
+            document.getElementById("insp-oversize").innerText = data.is_oversize !== undefined ? (data.is_oversize ? "Yes" : "No") : "—";
+        }
+
+        function updateQuickChips(state, data) {
+            const container = document.getElementById("quickChips");
+            container.innerHTML = "";
+
+            if (state === "AWAITING_ARRIVAL_DATE") {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('2026-10-01')">📅 2026-10-01</button>
+                    <button class="chip-btn" onclick="sendQuick('01-Oct-2026')">📅 01-Oct-2026</button>
+                    <button class="chip-btn" onclick="sendQuick('restart')">🔄 Restart</button>
+                `;
+            } else if (state === "AWAITING_PAYMENT_DATE") {
+                const arr = data.arrival_date || '2026-10-01';
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('${arr}')">📅 Same Day (${arr})</button>
+                    <button class="chip-btn" onclick="sendQuick('2026-10-06')">📅 6 Days Dwell (2026-10-06)</button>
+                    <button class="chip-btn" onclick="sendQuick('back')">↩️ Back</button>
+                `;
+            } else if (state === "AWAITING_CATEGORY") {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('1')">1. AFU</button>
+                    <button class="chip-btn" onclick="sendQuick('2')">2. PHARMA</button>
+                    <button class="chip-btn" onclick="sendQuick('3')">3. ICG</button>
+                    <button class="chip-btn" onclick="sendQuick('4')">4. ICG COLD</button>
+                `;
+            } else if (state === "AWAITING_CARGO_CLASS") {
+                if (data.category === "AFU") {
+                    container.innerHTML = `
+                        <button class="chip-btn" onclick="sendQuick('1')">1. GEN (General)</button>
+                        <button class="chip-btn" onclick="sendQuick('2')">2. IDT (Detained)</button>
+                    `;
+                } else if (data.category === "PHARMA") {
+                    container.innerHTML = `<button class="chip-btn" onclick="sendQuick('1')">1. GEN (PIL)</button>`;
+                } else if (data.category === "ICG") {
+                    container.innerHTML = `
+                        <button class="chip-btn" onclick="sendQuick('1')">1. IGEN</button>
+                        <button class="chip-btn" onclick="sendQuick('2')">2. IDT (DR)</button>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <button class="chip-btn" onclick="sendQuick('1')">1. 2 to 8 °C (ICO)</button>
+                        <button class="chip-btn" onclick="sendQuick('2')">2. 15 to 25 °C (IRT)</button>
+                        <button class="chip-btn" onclick="sendQuick('3')">3. Freezer (IRO)</button>
+                    `;
+                }
+            } else if (state === "AWAITING_WEIGHT") {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('50')">⚖️ 50 kg</button>
+                    <button class="chip-btn" onclick="sendQuick('500')">⚖️ 500 kg</button>
+                    <button class="chip-btn" onclick="sendQuick('1000')">⚖️ 1,000 kg</button>
+                    <button class="chip-btn" onclick="sendQuick('5000')">⚖️ 5,000 kg</button>
+                `;
+            } else if (state === "AWAITING_STATION") {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('KHI')">📍 Karachi (KHI - 15%)</button>
+                    <button class="chip-btn" onclick="sendQuick('ISB')">📍 Islamabad (ISB - 15%)</button>
+                    <button class="chip-btn" onclick="sendQuick('LHE')">📍 Lahore (LHE - 16%)</button>
+                    <button class="chip-btn" onclick="sendQuick('MUX')">📍 Multan (MUX - 16%)</button>
+                `;
+            } else if (state === "AWAITING_OVERSIZE") {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('Yes')" style="border-color: var(--wa-emerald); color: var(--wa-emerald);">📐 Yes (Oversize)</button>
+                    <button class="chip-btn" onclick="sendQuick('No')">No (Standard)</button>
+                `;
+            } else if (state === "REVIEW") {
+                container.innerHTML = `
+                    <button class="chip-btn confirm-chip" onclick="sendQuick('CONFIRM')">✅ CONFIRM & CALCULATE</button>
+                    <button class="chip-btn" onclick="sendQuick('edit weight')">✏️ Edit Weight</button>
+                    <button class="chip-btn" onclick="sendQuick('edit oversize')">✏️ Edit Oversize</button>
+                    <button class="chip-btn" onclick="sendQuick('restart')">🔄 Restart</button>
+                `;
+            } else if (state === "RESULT") {
+                container.innerHTML = `
+                    <button class="chip-btn confirm-chip" onclick="sendQuick('NEW')">🔄 New Calculation</button>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button class="chip-btn" onclick="sendQuick('Hi')">Start</button>
+                    <button class="chip-btn" onclick="sendQuick('restart')">Restart</button>
+                `;
+            }
+        }
+
+        async function resetSession() {
+            sessionId = "web-sim-" + Math.floor(Math.random() * 1000000);
+            updateInspector({});
+            const stream = document.getElementById("chatStream");
+            stream.innerHTML = `
+                <div class="msg-bubble msg-bot">
+👋 <b>Welcome to Gerry’s/dnata Tariff Calculator</b>
+
+I will help you calculate import cargo tariffs and station taxes for Karachi, Lahore, Islamabad, and Multan.
+
+📅 Please enter the <b>Cargo Arrival Date</b> (e.g. <code>2026-10-01</code> or <code>01-Oct-2026</code>):
+                    <div class="msg-meta">
+                        <span class="time">${getTimeStr()}</span>
+                    </div>
+                </div>
+                <div class="typing-bubble" id="typingIndicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <span>Assistant is calculating...</span>
+                </div>
+            `;
+            updateQuickChips("AWAITING_ARRIVAL_DATE", {});
+            scrollToBottom();
+        }
+
+        async function runPreset(presetName) {
+            await resetSession();
+            let steps = [];
+            if (presetName === 'oversize_yes') {
+                steps = ['2026-10-01', '2026-10-01', '1', '1', '1000', '1', 'Yes', 'CONFIRM'];
+            } else if (presetName === 'oversize_no') {
+                steps = ['2026-10-01', '2026-10-01', '1', '1', '1000', '1', 'No', 'CONFIRM'];
+            } else if (presetName === 'pharma') {
+                steps = ['2026-10-01', '2026-10-01', '2', '1', '50', '3', 'No', 'CONFIRM'];
+            } else if (presetName === 'icg_blocked') {
+                steps = ['2026-10-01', '2026-10-02', '3', '1', '100', '1', 'No', 'CONFIRM'];
+            }
+
+            for (const step of steps) {
+                await sendMessage(step);
+                await new Promise(r => setTimeout(r, 220));
+            }
+        }
+    </script>
+</body>
+</html>

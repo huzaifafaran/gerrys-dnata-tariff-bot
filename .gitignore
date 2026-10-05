@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Environment and sensitive keys
+.env
+.env.*
+!.env.example
+
+# Databases
+local_dev.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Node & WhatsApp Credentials
+node_modules/
+bridge/node_modules/
+bridge/auth_info/
+auth_info/
+
+# Tests & Logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
