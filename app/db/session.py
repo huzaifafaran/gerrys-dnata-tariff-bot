@@ -23,3 +23,13 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def init_db():
+    """Create all database tables and seed initial data."""
+    from app.db.models import Base
+    from app.db.seed import seed_database
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        seed_database(db)
+

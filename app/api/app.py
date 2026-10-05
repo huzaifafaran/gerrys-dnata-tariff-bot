@@ -77,6 +77,25 @@ def create_app() -> FastAPI:
     app.include_router(webhook_router)
     app.include_router(dev_router)
 
+    @app.get("/pairing-code")
+    async def pairing_code_status():
+        import httpx
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(f"{settings.WAHA_BASE_URL}/api/pairingCode", timeout=3.0)
+                data = resp.json()
+                code = data.get("pairingCode")
+                if code:
+                    return {
+                        "status": "ready_to_pair",
+                        "phone": data.get("phone"),
+                        "pairing_code": code,
+                        "instruction": f"Open WhatsApp on {data.get('phone')} -> Linked Devices -> Link a Device -> Link with phone number instead -> Enter: {code}"
+                    }
+                return data
+        except Exception as e:
+            return {"status": "starting", "message": "WhatsApp bridge is initializing. Refresh this page in a few seconds.", "error": str(e)}
+
     return app
 
 

@@ -29,10 +29,13 @@ async function startSock() {
 
     sock.ev.on("creds.update", saveCreds);
 
+    let latestPairingCode = null;
+
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
                 const code = await sock.requestPairingCode(PHONE_NUMBER.replace(/\D/g, ""));
+                latestPairingCode = code;
                 console.log("\n==========================================");
                 console.log(">>> WHATSAPP PAIRING CODE: " + code);
                 console.log("==========================================\n");
@@ -41,6 +44,15 @@ async function startSock() {
             }
         }, 3000);
     }
+
+    app.get("/api/pairingCode", (req, res) => {
+        return res.json({
+            pairingCode: latestPairingCode,
+            phone: PHONE_NUMBER,
+            registered: Boolean(sock?.authState?.creds?.registered),
+            status: sock?.authState?.creds?.registered ? "connected" : (latestPairingCode ? "ready_to_pair" : "generating_code")
+        });
+    });
 
     sock.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect } = update;
