@@ -13,12 +13,16 @@ echo "Public Port: ${PORT}"
 echo "Bridge Port: ${BRIDGE_PORT}"
 echo "=========================================="
 
-# 1. Start Node.js Baileys WhatsApp Bridge in background
+# 1. Initialize SQLite Database schema & seeds first
+echo "Initializing database schema..."
+python -c "from app.db.session import init_db; init_db()"
+
+# 2. Start Node.js Baileys WhatsApp Bridge in background
 echo "Starting WhatsApp Baileys Bridge..."
 node bridge/server.js &
 BRIDGE_PID=$!
 
-# 2. Start Background Outbox Worker
+# 3. Start Background Outbox Worker
 echo "Starting Outbox Worker..."
 python -m app.worker.outbox_worker &
 WORKER_PID=$!
